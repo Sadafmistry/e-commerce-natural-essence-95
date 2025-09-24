@@ -1,6 +1,5 @@
 import { Button } from '@/components/ui/button';
 import { ArrowRight, Leaf, Heart, Sparkles } from 'lucide-react';
-import { Link } from 'react-router-dom';
 import heroImage from '@/assets/hero-scrubs.jpg';
 
 const HeroSection = () => {
@@ -38,17 +37,13 @@ const HeroSection = () => {
             </div>
             
             <div className="flex flex-col sm:flex-row gap-4">
-              <Link to="/products">
-                <Button size="lg" className="group">
-                  Shop Now
-                  <ArrowRight className="ml-2 h-4 w-4 transition-transform group-hover:translate-x-1" />
-                </Button>
-              </Link>
-              <Link to="/about">
-                <Button variant="outline" size="lg">
-                  Learn More
-                </Button>
-              </Link>
+              <Button size="lg" className="group">
+                Shop Now
+                <ArrowRight className="ml-2 h-4 w-4 transition-transform group-hover:translate-x-1" />
+              </Button>
+              <Button variant="outline" size="lg">
+                Learn More
+              </Button>
             </div>
             
             <div className="flex items-center space-x-8">

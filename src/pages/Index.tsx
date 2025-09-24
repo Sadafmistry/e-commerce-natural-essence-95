@@ -1,24 +1,17 @@
-import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Star, Leaf, Heart, Award, ArrowRight, Shield, Truck, RotateCcw } from 'lucide-react';
-import { Link } from 'react-router-dom';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
 import HeroSection from '@/components/HeroSection';
 import ProductCard from '@/components/ProductCard';
-import { supabase } from '@/integrations/supabase/client';
 import coffeeScrub from '@/assets/coffee-scrub.jpg';
 import lavenderScrub from '@/assets/lavender-scrub.jpg';
 import seaSaltScrub from '@/assets/sea-salt-scrub.jpg';
 import oatmealScrub from '@/assets/oatmeal-scrub.jpg';
 
 const Index = () => {
-  const [featuredProducts, setFeaturedProducts] = useState<any[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
-
-  // Fallback products in case database is empty
-  const fallbackProducts = [
+  const featuredProducts = [
     {
       id: '1',
       name: 'Arabica Coffee Body Scrub',
@@ -59,49 +52,6 @@ const Index = () => {
       description: 'Gentle oatmeal and honey scrub perfect for sensitive skin types.'
     }
   ];
-
-  useEffect(() => {
-    const fetchFeaturedProducts = async () => {
-      try {
-        const { data: products, error } = await supabase
-          .from('products')
-          .select('*')
-          .eq('is_featured', true)
-          .eq('is_active', true)
-          .limit(4);
-
-        if (error) {
-          console.error('Error fetching products:', error);
-          setFeaturedProducts(fallbackProducts);
-        } else if (products && products.length > 0) {
-          // Transform database products to match expected format
-          const transformedProducts = products.map(product => ({
-            id: product.id,
-            name: product.name,
-            price: Number(product.price),
-            originalPrice: product.original_price ? Number(product.original_price) : undefined,
-            image: product.image_url || coffeeScrub,
-            rating: Number(product.rating) || 4.5,
-            reviewCount: product.review_count || 0,
-            description: product.description || '',
-            badge: product.badge || undefined,
-            slug: product.slug
-          }));
-          setFeaturedProducts(transformedProducts);
-        } else {
-          // No products in database, use fallback
-          setFeaturedProducts(fallbackProducts);
-        }
-      } catch (error) {
-        console.error('Error fetching products:', error);
-        setFeaturedProducts(fallbackProducts);
-      } finally {
-        setIsLoading(false);
-      }
-    };
-
-    fetchFeaturedProducts();
-  }, []);
 
   const benefits = [
     {
@@ -182,25 +132,16 @@ const Index = () => {
             </div>
             
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
-              {isLoading ? (
-                // Loading skeleton
-                [...Array(4)].map((_, i) => (
-                  <div key={i} className="bg-muted animate-pulse rounded-lg h-80"></div>
-                ))
-              ) : (
-                featuredProducts.map((product) => (
-                  <ProductCard key={product.id} product={product} />
-                ))
-              )}
+              {featuredProducts.map((product) => (
+                <ProductCard key={product.id} product={product} />
+              ))}
             </div>
             
             <div className="text-center mt-12">
-              <Link to="/products">
-                <Button size="lg" variant="outline">
-                  View All Products
-                  <ArrowRight className="ml-2 h-4 w-4" />
-                </Button>
-              </Link>
+              <Button size="lg" variant="outline">
+                View All Products
+                <ArrowRight className="ml-2 h-4 w-4" />
+              </Button>
             </div>
           </div>
         </section>
@@ -255,12 +196,10 @@ const Index = () => {
                   to transform your daily routine into a spa-like experience while nourishing your skin 
                   with the power of nature.
                 </p>
-                <Link to="/about">
-                  <Button size="lg" variant="natural">
-                    Learn Our Story
-                    <ArrowRight className="ml-2 h-4 w-4" />
-                  </Button>
-                </Link>
+                <Button size="lg" variant="natural">
+                  Learn Our Story
+                  <ArrowRight className="ml-2 h-4 w-4" />
+                </Button>
               </div>
               
               <div className="relative">
