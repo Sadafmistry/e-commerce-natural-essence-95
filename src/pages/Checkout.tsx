@@ -7,28 +7,29 @@ import { Separator } from '@/components/ui/separator';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Textarea } from '@/components/ui/textarea';
 import { ArrowLeft, CreditCard, MapPin, Package } from 'lucide-react';
-import { Link, Navigate } from 'react-router-dom';
+import { Link, Navigate, useNavigate } from 'react-router-dom';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
 import { useCart } from '@/contexts/CartContext';
 import { useAuth } from '@/contexts/AuthContext';
 import { toast } from '@/hooks/use-toast';
+import { useRazorpay } from '@/hooks/useRazorpay';
+import { supabase } from '@/integrations/supabase/client';
 
 const Checkout = () => {
   const { items, getTotalItems, getTotalPrice, clearCart } = useCart();
   const { user } = useAuth();
+  const navigate = useNavigate();
   const [isLoading, setIsLoading] = useState(false);
+  const { processPayment, isLoading: paymentLoading } = useRazorpay();
 
   const [shippingForm, setShippingForm] = useState({
-    firstName: '',
-    lastName: '',
-    email: '',
+    name: '',
     phone: '',
     address: '',
     city: '',
     state: '',
     pincode: '',
-    notes: '',
   });
 
   const [paymentMethod, setPaymentMethod] = useState('razorpay');
@@ -49,71 +50,97 @@ const Checkout = () => {
 
   const handlePlaceOrder = async (e: React.FormEvent) => {
     e.preventDefault();
-    
-    // Validate form
-    if (!shippingForm.firstName || !shippingForm.lastName || !shippingForm.email || 
-        !shippingForm.phone || !shippingForm.address || !shippingForm.city || 
-        !shippingForm.state || !shippingForm.pincode) {
-      toast({
-        title: "Missing Information",
-        description: "Please fill in all required shipping details.",
-        variant: "destructive",
-      });
-      return;
-    }
-
     setIsLoading(true);
 
     try {
+      // Validate form
+      if (!shippingForm.name || !shippingForm.phone || !shippingForm.address || 
+          !shippingForm.city || !shippingForm.state || !shippingForm.pincode) {
+        toast({
+          title: "Please fill all fields",
+          description: "All shipping information is required.",
+          variant: "destructive",
+        });
+        setIsLoading(false);
+        return;
+      }
+
       if (paymentMethod === 'razorpay') {
-        // Initialize Razorpay payment
-        await initiateRazorpayPayment();
+        // Create order via edge function
+        const { data: orderData, error: orderError } = await supabase.functions.invoke('create-order', {
+          body: {
+            items: items.map(item => ({
+              product_id: item.product.id,
+              quantity: item.quantity,
+              price: item.product.price,
+            })),
+            shipping_address: shippingForm,
+            total_amount: finalTotal,
+          }
+        });
+
+        if (orderError) {
+          throw new Error('Failed to create order');
+        }
+
+        // Process payment with Razorpay
+        const paymentSuccess = await processPayment({
+          orderId: orderData.razorpay_order_id,
+          amount: finalTotal,
+          currency: 'INR',
+          name: 'Natural Essence',
+          description: 'Natural Body Scrubs',
+          prefill: {
+            name: shippingForm.name,
+            email: user?.email || '',
+            contact: shippingForm.phone,
+          },
+        });
+
+        if (paymentSuccess) {
+          // Clear cart and redirect
+          await clearCart();
+          toast({
+            title: "Order placed successfully!",
+            description: "Thank you for your purchase. You will receive a confirmation email shortly.",
+          });
+          navigate('/');
+        }
       } else {
-        // Handle COD
-        await createOrder('cod');
+        // Handle COD - create order without payment
+        const { error: orderError } = await supabase.functions.invoke('create-order', {
+          body: {
+            items: items.map(item => ({
+              product_id: item.product.id,
+              quantity: item.quantity,
+              price: item.product.price,
+            })),
+            shipping_address: shippingForm,
+            total_amount: finalTotal,
+            payment_method: 'cod',
+          }
+        });
+
+        if (orderError) {
+          throw new Error('Failed to create COD order');
+        }
+
+        toast({
+          title: "COD order placed!",
+          description: "Your order will be delivered and payment collected at your doorstep.",
+        });
+        await clearCart();
+        navigate('/');
       }
     } catch (error) {
-      console.error('Error placing order:', error);
+      console.error('Order placement error:', error);
       toast({
-        title: "Error",
-        description: "Failed to place order. Please try again.",
+        title: "Failed to place order",
+        description: "Please try again or contact support.",
         variant: "destructive",
       });
     } finally {
       setIsLoading(false);
-    }
-  };
-
-  const initiateRazorpayPayment = async () => {
-    // This would integrate with Razorpay Edge Function
-    toast({
-      title: "Payment Integration",
-      description: "Razorpay payment integration will be implemented with Edge Functions.",
-    });
-    
-    // For now, simulate successful payment
-    setTimeout(() => {
-      createOrder('razorpay');
-    }, 2000);
-  };
-
-  const createOrder = async (paymentMethod: string) => {
-    try {
-      // Create order in database
-      const orderNumber = `NE${Date.now()}`;
-      
-      toast({
-        title: "Order Placed Successfully!",
-        description: `Order ${orderNumber} has been created. You will receive a confirmation email shortly.`,
-      });
-
-      // Clear cart after successful order
-      await clearCart();
-      
-      // In a real app, redirect to order confirmation page
-      // navigate(`/orders/${orderId}`);
-    } catch (error) {
-      throw error;
     }
   };
 
@@ -147,34 +174,12 @@ const Checkout = () => {
                   </CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-4">
-                  <div className="grid grid-cols-2 gap-4">
-                    <div className="space-y-2">
-                      <Label htmlFor="firstName">First Name *</Label>
-                      <Input
-                        id="firstName"
-                        value={shippingForm.firstName}
-                        onChange={(e) => setShippingForm({ ...shippingForm, firstName: e.target.value })}
-                        required
-                      />
-                    </div>
-                    <div className="space-y-2">
-                      <Label htmlFor="lastName">Last Name *</Label>
-                      <Input
-                        id="lastName"
-                        value={shippingForm.lastName}
-                        onChange={(e) => setShippingForm({ ...shippingForm, lastName: e.target.value })}
-                        required
-                      />
-                    </div>
-                  </div>
-
                   <div className="space-y-2">
-                    <Label htmlFor="email">Email Address *</Label>
+                    <Label htmlFor="name">Full Name *</Label>
                     <Input
-                      id="email"
-                      type="email"
-                      value={shippingForm.email}
-                      onChange={(e) => setShippingForm({ ...shippingForm, email: e.target.value })}
+                      id="name"
+                      value={shippingForm.name}
+                      onChange={(e) => setShippingForm({ ...shippingForm, name: e.target.value })}
                       required
                     />
                   </div>
@@ -231,15 +236,6 @@ const Checkout = () => {
                     </div>
                   </div>
 
-                  <div className="space-y-2">
-                    <Label htmlFor="notes">Order Notes (Optional)</Label>
-                    <Textarea
-                      id="notes"
-                      value={shippingForm.notes}
-                      onChange={(e) => setShippingForm({ ...shippingForm, notes: e.target.value })}
-                      placeholder="Any special instructions for your order"
-                    />
-                  </div>
                 </CardContent>
               </Card>
 
@@ -336,9 +332,9 @@ const Checkout = () => {
                     type="submit" 
                     size="lg" 
                     className="w-full" 
-                    disabled={isLoading}
+                    disabled={isLoading || paymentLoading}
                   >
-                    {isLoading ? 'Processing...' : `Place Order - ₹${finalTotal.toFixed(2)}`}
+                    {(isLoading || paymentLoading) ? 'Processing...' : `Place Order - ₹${finalTotal.toFixed(2)}`}
                   </Button>
 
                   <div className="text-xs text-muted-foreground text-center">

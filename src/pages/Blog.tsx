@@ -15,7 +15,8 @@ interface BlogPost {
   excerpt: string;
   image_url?: string;
   slug: string;
-  published_at: string;
+  published_at?: string;
+  created_at: string;
   author_id: string;
 }
 
@@ -35,7 +36,12 @@ const Blog = () => {
           .order('published_at', { ascending: false });
 
         if (error) throw error;
-        setPosts(data);
+        // Map the data to match our interface, using created_at as published_at
+        const mappedPosts = data.map(post => ({
+          ...post,
+          published_at: post.created_at
+        }));
+        setPosts(mappedPosts);
       } catch (error) {
         console.error('Error loading blog posts:', error);
       } finally {
