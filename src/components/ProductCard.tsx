@@ -1,6 +1,7 @@
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Star, ShoppingCart } from 'lucide-react';
+import { useCart } from '@/contexts/CartContext';
 
 interface Product {
   id: string;
@@ -19,6 +20,12 @@ interface ProductCardProps {
 }
 
 const ProductCard = ({ product }: ProductCardProps) => {
+  const { addToCart, isLoading: cartLoading } = useCart();
+
+  const handleAddToCart = async () => {
+    await addToCart(product.id);
+  };
+
   return (
     <Card className="group overflow-hidden transition-all duration-300 hover:shadow-natural hover:-translate-y-1">
       <div className="relative overflow-hidden">
@@ -77,9 +84,14 @@ const ProductCard = ({ product }: ProductCardProps) => {
               )}
             </div>
             
-            <Button size="sm" className="space-x-1">
+            <Button 
+              size="sm" 
+              className="space-x-1"
+              onClick={handleAddToCart}
+              disabled={cartLoading}
+            >
               <ShoppingCart className="h-4 w-4" />
-              <span>Add</span>
+              <span>{cartLoading ? 'Adding...' : 'Add'}</span>
             </Button>
           </div>
         </div>
