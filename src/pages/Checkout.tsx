@@ -79,8 +79,9 @@ const Checkout = () => {
           }
         });
 
-        if (orderError) {
-          throw new Error('Failed to create order');
+        if (orderError || !orderData) {
+          console.error('Order creation error:', orderError, orderData);
+          throw new Error(orderData?.error || 'Failed to create order');
         }
 
         // Process payment with Razorpay
@@ -108,7 +109,7 @@ const Checkout = () => {
         }
       } else {
         // Handle COD - create order without payment
-        const { error: orderError } = await supabase.functions.invoke('create-order', {
+        const { data: codData, error: orderError } = await supabase.functions.invoke('create-order', {
           body: {
             items: items.map(item => ({
               product_id: item.product.id,
@@ -121,8 +122,9 @@ const Checkout = () => {
           }
         });
 
-        if (orderError) {
-          throw new Error('Failed to create COD order');
+        if (orderError || !codData || codData.error) {
+          console.error('COD order error:', orderError, codData);
+          throw new Error(codData?.error || 'Failed to create COD order');
         }
 
         toast({

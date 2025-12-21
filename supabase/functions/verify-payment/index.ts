@@ -1,6 +1,5 @@
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
-import { crypto } from "https://deno.land/std@0.190.0/crypto/crypto.ts";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -14,6 +13,8 @@ serve(async (req) => {
   }
 
   try {
+    console.log('Verify payment function called');
+    
     const supabase = createClient(
       Deno.env.get('SUPABASE_URL') ?? '',
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? '',
@@ -22,6 +23,7 @@ serve(async (req) => {
     const { razorpay_order_id, razorpay_payment_id, razorpay_signature } = await req.json();
 
     if (!razorpay_order_id || !razorpay_payment_id || !razorpay_signature) {
+      console.error('Missing payment details');
       return new Response(
         JSON.stringify({ error: 'Missing payment details' }),
         { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
@@ -30,13 +32,14 @@ serve(async (req) => {
 
     const razorpayKeySecret = Deno.env.get('RAZORPAY_KEY_SECRET');
     if (!razorpayKeySecret) {
+      console.error('Razorpay key secret not configured');
       return new Response(
         JSON.stringify({ error: 'Payment verification configuration missing' }),
         { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
 
-    // Verify signature
+    // Verify signature using Web Crypto API
     const body = razorpay_order_id + "|" + razorpay_payment_id;
     const key = await crypto.subtle.importKey(
       "raw",
@@ -58,13 +61,14 @@ serve(async (req) => {
       );
     }
 
-    // Update order status
+    console.log('Signature verified successfully');
+
+    // Update order status (removed paid_at as it doesn't exist in schema)
     const { error: updateError } = await supabase
       .from('orders')
       .update({
         status: 'paid',
         razorpay_payment_id,
-        paid_at: new Date().toISOString(),
       })
       .eq('razorpay_order_id', razorpay_order_id);
 
@@ -75,6 +79,8 @@ serve(async (req) => {
         { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
+
+    console.log('Order status updated to paid');
 
     // Clear user's cart after successful payment
     const authHeader = req.headers.get('Authorization');
@@ -87,6 +93,7 @@ serve(async (req) => {
           .from('cart_items')
           .delete()
           .eq('user_id', user.id);
+        console.log('Cart cleared for user:', user.id);
       }
     }
 
