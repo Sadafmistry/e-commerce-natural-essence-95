@@ -1,57 +1,58 @@
+import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
-import { Star, Leaf, Heart, Award, ArrowRight, Shield, Truck, RotateCcw } from 'lucide-react';
+import { Leaf, Heart, Award, ArrowRight, Shield, Truck, RotateCcw } from 'lucide-react';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
 import HeroSection from '@/components/HeroSection';
 import ProductCard from '@/components/ProductCard';
+import { supabase } from '@/integrations/supabase/client';
 import coffeeScrub from '@/assets/coffee-scrub.jpg';
 import lavenderScrub from '@/assets/lavender-scrub.jpg';
-import seaSaltScrub from '@/assets/sea-salt-scrub.jpg';
-import oatmealScrub from '@/assets/oatmeal-scrub.jpg';
+
+interface Product {
+  id: string;
+  name: string;
+  price: number;
+  originalPrice?: number;
+  image: string;
+  rating: number;
+  reviewCount: number;
+  description: string;
+  badge?: string;
+}
 
 const Index = () => {
-  const featuredProducts = [
-    {
-      id: '1',
-      name: 'Arabica Coffee Body Scrub',
-      price: 599,
-      originalPrice: 799,
-      image: coffeeScrub,
-      rating: 4.8,
-      reviewCount: 124,
-      description: 'Energizing coffee scrub that awakens your skin and boosts circulation naturally.',
-      badge: 'Bestseller'
-    },
-    {
-      id: '2',
-      name: 'Lavender Dreams Scrub',
-      price: 649,
-      image: lavenderScrub,
-      rating: 4.9,
-      reviewCount: 89,
-      description: 'Calming lavender scrub perfect for relaxation and evening skincare rituals.',
-      badge: 'New'
-    },
-    {
-      id: '3',
-      name: 'Dead Sea Salt Exfoliant',
-      price: 699,
-      image: seaSaltScrub,
-      rating: 4.7,
-      reviewCount: 156,
-      description: 'Mineral-rich sea salt scrub that detoxifies and purifies your skin deeply.'
-    },
-    {
-      id: '4',
-      name: 'Oatmeal Honey Gentle Scrub',
-      price: 549,
-      image: oatmealScrub,
-      rating: 4.9,
-      reviewCount: 203,
-      description: 'Gentle oatmeal and honey scrub perfect for sensitive skin types.'
-    }
-  ];
+  const [featuredProducts, setFeaturedProducts] = useState<Product[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchFeaturedProducts = async () => {
+      const { data, error } = await supabase
+        .from('products')
+        .select('*')
+        .eq('is_active', true)
+        .order('rating', { ascending: false })
+        .limit(4);
+
+      if (data && !error) {
+        setFeaturedProducts(data.map(p => ({
+          id: p.id,
+          name: p.name,
+          price: Number(p.price),
+          originalPrice: p.original_price ? Number(p.original_price) : undefined,
+          image: p.image_url || '',
+          rating: Number(p.rating) || 4.5,
+          reviewCount: p.review_count || 0,
+          description: p.description || '',
+          badge: p.badge || undefined
+        })));
+      }
+      setIsLoading(false);
+    };
+
+    fetchFeaturedProducts();
+  }, []);
 
   const benefits = [
     {
@@ -132,9 +133,19 @@ const Index = () => {
             </div>
             
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
-              {featuredProducts.map((product) => (
-                <ProductCard key={product.id} product={product} />
-              ))}
+              {isLoading ? (
+                <div className="col-span-4 text-center py-12">
+                  <p className="text-muted-foreground">Loading products...</p>
+                </div>
+              ) : featuredProducts.length > 0 ? (
+                featuredProducts.map((product) => (
+                  <ProductCard key={product.id} product={product} />
+                ))
+              ) : (
+                <div className="col-span-4 text-center py-12">
+                  <p className="text-muted-foreground">No products available</p>
+                </div>
+              )}
             </div>
             
             <div className="text-center mt-12">
