@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
-import { ShoppingCart, Menu, X, User, Search, Settings } from 'lucide-react';
+import { ShoppingCart, Menu, X, User, Search, LayoutDashboard } from 'lucide-react';
 import { Link, useNavigate } from 'react-router-dom';
 
 import { useCart } from '@/contexts/CartContext';
@@ -68,7 +68,7 @@ const Header = () => {
             </Button>
             {isAdmin && (
               <Button variant="ghost" size="icon" onClick={() => navigate('/admin')} title="Admin Dashboard">
-                <Settings className="h-4 w-4" />
+                <LayoutDashboard className="h-4 w-4" />
               </Button>
             )}
             <Button variant="ghost" size="icon" onClick={handleUserClick}>
