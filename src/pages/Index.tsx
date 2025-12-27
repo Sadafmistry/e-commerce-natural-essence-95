@@ -22,6 +22,10 @@ interface Product {
   badge?: string;
 }
 
+  const handleProductsClick = () => {
+    navigate('/products');
+  };
+
 const Index = () => {
   const [featuredProducts, setFeaturedProducts] = useState<Product[]>([]);
   const [isLoading, setIsLoading] = useState(true);
