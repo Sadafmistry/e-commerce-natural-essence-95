@@ -7,18 +7,36 @@ import { Button } from '@/components/ui/button';
 import { 
   Package, 
   ShoppingCart, 
-  Users, 
   DollarSign, 
   TrendingUp,
   ArrowRight,
   LogOut
 } from 'lucide-react';
+import RevenueChart from '@/components/admin/RevenueChart';
+import OrdersChart from '@/components/admin/OrdersChart';
+import TopProductsChart from '@/components/admin/TopProductsChart';
+import { format, subDays, parseISO } from 'date-fns';
 
 interface DashboardStats {
   totalProducts: number;
   totalOrders: number;
   totalRevenue: number;
   pendingOrders: number;
+}
+
+interface RevenueData {
+  date: string;
+  revenue: number;
+}
+
+interface OrderData {
+  date: string;
+  orders: number;
+}
+
+interface ProductSalesData {
+  name: string;
+  sales: number;
 }
 
 const AdminDashboard = () => {
@@ -28,7 +46,11 @@ const AdminDashboard = () => {
     totalRevenue: 0,
     pendingOrders: 0,
   });
+  const [revenueData, setRevenueData] = useState<RevenueData[]>([]);
+  const [ordersData, setOrdersData] = useState<OrderData[]>([]);
+  const [topProducts, setTopProducts] = useState<ProductSalesData[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [chartsLoading, setChartsLoading] = useState(true);
   const { signOut } = useAuth();
 
   useEffect(() => {
@@ -61,7 +83,88 @@ const AdminDashboard = () => {
       }
     };
 
+    const fetchChartData = async () => {
+      try {
+        const thirtyDaysAgo = subDays(new Date(), 30).toISOString();
+        
+        // Fetch orders for charts
+        const { data: orders } = await supabase
+          .from('orders')
+          .select('created_at, total_amount')
+          .gte('created_at', thirtyDaysAgo)
+          .order('created_at', { ascending: true });
+
+        if (orders) {
+          // Process revenue data by date
+          const revenueByDate: Record<string, number> = {};
+          const ordersByDate: Record<string, number> = {};
+          
+          // Initialize last 30 days with 0
+          for (let i = 29; i >= 0; i--) {
+            const date = format(subDays(new Date(), i), 'MMM dd');
+            revenueByDate[date] = 0;
+            ordersByDate[date] = 0;
+          }
+
+          orders.forEach(order => {
+            const date = format(parseISO(order.created_at), 'MMM dd');
+            if (revenueByDate[date] !== undefined) {
+              revenueByDate[date] += Number(order.total_amount);
+              ordersByDate[date] += 1;
+            }
+          });
+
+          setRevenueData(
+            Object.entries(revenueByDate).map(([date, revenue]) => ({ date, revenue }))
+          );
+          setOrdersData(
+            Object.entries(ordersByDate).map(([date, orders]) => ({ date, orders }))
+          );
+        }
+
+        // Fetch top products by sales
+        const { data: orderItems } = await supabase
+          .from('order_items')
+          .select(`
+            price,
+            quantity,
+            product_id
+          `);
+
+        if (orderItems) {
+          // Get product names
+          const productIds = [...new Set(orderItems.map(item => item.product_id))];
+          const { data: products } = await supabase
+            .from('products')
+            .select('id, name')
+            .in('id', productIds);
+
+          const productMap = new Map(products?.map(p => [p.id, p.name]) || []);
+          
+          // Calculate sales per product
+          const salesByProduct: Record<string, number> = {};
+          orderItems.forEach(item => {
+            const productName = productMap.get(item.product_id) || 'Unknown';
+            salesByProduct[productName] = (salesByProduct[productName] || 0) + (Number(item.price) * item.quantity);
+          });
+
+          // Get top 5 products
+          const topProductsData = Object.entries(salesByProduct)
+            .sort(([, a], [, b]) => b - a)
+            .slice(0, 5)
+            .map(([name, sales]) => ({ name, sales }));
+
+          setTopProducts(topProductsData);
+        }
+      } catch (error) {
+        console.error('Error fetching chart data:', error);
+      } finally {
+        setChartsLoading(false);
+      }
+    };
+
     fetchStats();
+    fetchChartData();
   }, []);
 
   const statCards = [
@@ -144,6 +247,48 @@ const AdminDashboard = () => {
               </CardContent>
             </Card>
           ))}
+        </div>
+
+        {/* Charts Section */}
+        <div className="mb-8">
+          <h2 className="text-xl font-serif font-bold text-foreground mb-4">Analytics</h2>
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
+            <RevenueChart data={revenueData} isLoading={chartsLoading} />
+            <OrdersChart data={ordersData} isLoading={chartsLoading} />
+          </div>
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <TopProductsChart data={topProducts} isLoading={chartsLoading} />
+            
+            {/* Recent Activity Card */}
+            <Card className="shadow-soft">
+              <CardHeader>
+                <CardTitle>Quick Stats</CardTitle>
+                <CardDescription>Performance overview</CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="flex justify-between items-center p-3 bg-muted/50 rounded-lg">
+                  <span className="text-sm text-muted-foreground">Average Order Value</span>
+                  <span className="font-semibold">
+                    ₹{stats.totalOrders > 0 
+                      ? Math.round(stats.totalRevenue / stats.totalOrders).toLocaleString() 
+                      : 0}
+                  </span>
+                </div>
+                <div className="flex justify-between items-center p-3 bg-muted/50 rounded-lg">
+                  <span className="text-sm text-muted-foreground">Order Completion Rate</span>
+                  <span className="font-semibold">
+                    {stats.totalOrders > 0 
+                      ? Math.round(((stats.totalOrders - stats.pendingOrders) / stats.totalOrders) * 100)
+                      : 0}%
+                  </span>
+                </div>
+                <div className="flex justify-between items-center p-3 bg-muted/50 rounded-lg">
+                  <span className="text-sm text-muted-foreground">Products Available</span>
+                  <span className="font-semibold">{stats.totalProducts}</span>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
         </div>
 
         {/* Quick Actions */}
