@@ -22,10 +22,6 @@ interface Product {
   badge?: string;
 }
 
-  const handleProductsClick = () => {
-    navigate('/products');
-  };
-
 const Index = () => {
   const [featuredProducts, setFeaturedProducts] = useState<Product[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -98,6 +94,10 @@ const Index = () => {
       description: '100% secure checkout'
     }
   ];
+
+    const handleProductsClick = () => {
+    navigate('/products');
+  };
 
   return (
     <div className="min-h-screen bg-background">
