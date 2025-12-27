@@ -67,7 +67,7 @@ const Header = () => {
               <Search className="h-4 w-4" />
             </Button>
             {isAdmin && (
-              <Button variant="ghost" size="icon" onClick={() => navigate('/admin/dashboard')} title="Admin Dashboard">
+              <Button variant="ghost" size="icon" onClick={() => navigate('/admin')} title="Admin Dashboard">
                 <Settings className="h-4 w-4" />
               </Button>
             )}
@@ -136,7 +136,7 @@ const Header = () => {
               </Link>
               {isAdmin && (
                 <Link
-                  to="/admin/dashboard"
+                  to="/admin"
                   className="text-foreground hover:text-primary transition-colors"
                   onClick={() => setIsMenuOpen(false)}
                 >
