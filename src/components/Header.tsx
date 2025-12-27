@@ -1,15 +1,17 @@
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
-import { ShoppingCart, Menu, X, User, Search } from 'lucide-react';
+import { ShoppingCart, Menu, X, User, Search, Settings } from 'lucide-react';
 import { Link, useNavigate } from 'react-router-dom';
 
 import { useCart } from '@/contexts/CartContext';
 import { useAuth } from '@/contexts/AuthContext';
+import { useAdmin } from '@/hooks/useAdmin';
 
 const Header = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const { getTotalItems } = useCart();
   const { user } = useAuth();
+  const { isAdmin } = useAdmin();
   const navigate = useNavigate();
 
   const handleSearchClick = () => {
@@ -64,6 +66,11 @@ const Header = () => {
             <Button variant="ghost" size="icon" onClick={handleSearchClick}>
               <Search className="h-4 w-4" />
             </Button>
+            {isAdmin && (
+              <Button variant="ghost" size="icon" onClick={() => navigate('/admin/dashboard')} title="Admin Dashboard">
+                <Settings className="h-4 w-4" />
+              </Button>
+            )}
             <Button variant="ghost" size="icon" onClick={handleUserClick}>
               <User className="h-4 w-4" />
             </Button>
@@ -127,6 +134,15 @@ const Header = () => {
               >
                 Contact
               </Link>
+              {isAdmin && (
+                <Link
+                  to="/admin/dashboard"
+                  className="text-foreground hover:text-primary transition-colors"
+                  onClick={() => setIsMenuOpen(false)}
+                >
+                  Admin Dashboard
+                </Link>
+              )}
             </nav>
           </div>
         )}
