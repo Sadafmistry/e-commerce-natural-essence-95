@@ -153,7 +153,7 @@ const Index = () => {
             </div>
             
             <div className="text-center mt-12">
-              <Button size="lg" variant="outline">
+              <Button size="lg" variant="outline" onClick={handleProductsClick}>
                 View All Products
                 <ArrowRight className="ml-2 h-4 w-4" />
               </Button>
