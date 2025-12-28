@@ -148,6 +148,7 @@ export type Database = {
         Row: {
           created_at: string
           id: string
+          payment_method: string
           razorpay_order_id: string | null
           razorpay_payment_id: string | null
           shipping_address: Json
@@ -159,6 +160,7 @@ export type Database = {
         Insert: {
           created_at?: string
           id?: string
+          payment_method?: string
           razorpay_order_id?: string | null
           razorpay_payment_id?: string | null
           shipping_address: Json
@@ -170,6 +172,7 @@ export type Database = {
         Update: {
           created_at?: string
           id?: string
+          payment_method?: string
           razorpay_order_id?: string | null
           razorpay_payment_id?: string | null
           shipping_address?: Json
