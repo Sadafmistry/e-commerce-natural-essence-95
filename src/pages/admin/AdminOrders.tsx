@@ -36,6 +36,7 @@ interface Order {
   user_id: string;
   total_amount: number;
   status: string;
+  payment_method: string;
   shipping_address: any;
   razorpay_order_id: string | null;
   razorpay_payment_id: string | null;
@@ -51,11 +52,15 @@ interface OrderItem {
 }
 
 const statusColors: Record<string, string> = {
-  pending: 'bg-yellow-100 text-yellow-800',
-  paid: 'bg-green-100 text-green-800',
+  order_placed: 'bg-yellow-100 text-yellow-800',
   shipped: 'bg-blue-100 text-blue-800',
+  dispatched: 'bg-purple-100 text-purple-800',
   delivered: 'bg-emerald-100 text-emerald-800',
-  cancelled: 'bg-red-100 text-red-800',
+};
+
+const paymentMethodColors: Record<string, string> = {
+  prepaid: 'bg-green-100 text-green-800',
+  cod: 'bg-orange-100 text-orange-800',
 };
 
 const AdminOrders = () => {
@@ -201,6 +206,7 @@ const AdminOrders = () => {
                       <TableHead>Date</TableHead>
                       <TableHead>Customer</TableHead>
                       <TableHead>Amount</TableHead>
+                      <TableHead>Payment</TableHead>
                       <TableHead>Status</TableHead>
                       <TableHead className="text-right">Actions</TableHead>
                     </TableRow>
@@ -226,23 +232,27 @@ const AdminOrders = () => {
                           ₹{Number(order.total_amount).toLocaleString()}
                         </TableCell>
                         <TableCell>
+                          <Badge className={paymentMethodColors[order.payment_method] || 'bg-gray-100 text-gray-800'}>
+                            {order.payment_method === 'cod' ? 'COD' : 'Prepaid'}
+                          </Badge>
+                        </TableCell>
+                        <TableCell>
                           <Select 
                             value={order.status} 
                             onValueChange={(value) => handleStatusChange(order.id, value)}
                           >
-                            <SelectTrigger className="w-32">
+                            <SelectTrigger className="w-36">
                               <SelectValue>
-                                <Badge className={statusColors[order.status] || ''}>
-                                  {order.status}
+                                <Badge className={statusColors[order.status] || 'bg-gray-100 text-gray-800'}>
+                                  {order.status === 'order_placed' ? 'Order Placed' : order.status.charAt(0).toUpperCase() + order.status.slice(1)}
                                 </Badge>
                               </SelectValue>
                             </SelectTrigger>
                             <SelectContent>
-                              <SelectItem value="pending">Pending</SelectItem>
-                              <SelectItem value="paid">Paid</SelectItem>
+                              <SelectItem value="order_placed">Order Placed</SelectItem>
                               <SelectItem value="shipped">Shipped</SelectItem>
+                              <SelectItem value="dispatched">Dispatched</SelectItem>
                               <SelectItem value="delivered">Delivered</SelectItem>
-                              <SelectItem value="cancelled">Cancelled</SelectItem>
                             </SelectContent>
                           </Select>
                         </TableCell>
@@ -282,8 +292,13 @@ const AdminOrders = () => {
                                 <div>
                                   <h4 className="font-medium mb-2">Payment Information</h4>
                                   <div className="text-sm text-muted-foreground bg-muted p-3 rounded-lg">
-                                    <p>Razorpay Order ID: {order.razorpay_order_id || 'N/A'}</p>
-                                    <p>Payment ID: {order.razorpay_payment_id || 'N/A'}</p>
+                                    <p>Payment Method: <Badge className={paymentMethodColors[selectedOrder?.payment_method || ''] || 'bg-gray-100 text-gray-800'}>{selectedOrder?.payment_method === 'cod' ? 'Cash on Delivery' : 'Prepaid'}</Badge></p>
+                                    {selectedOrder?.payment_method === 'prepaid' && (
+                                      <>
+                                        <p className="mt-2">Razorpay Order ID: {order.razorpay_order_id || 'N/A'}</p>
+                                        <p>Payment ID: {order.razorpay_payment_id || 'N/A'}</p>
+                                      </>
+                                    )}
                                   </div>
                                 </div>
 

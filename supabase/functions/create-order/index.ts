@@ -123,16 +123,15 @@ serve(async (req) => {
     }
 
     // Create order in database
-    const orderStatus = isCOD ? 'cod_pending' : 'pending';
-    
     const { data: order, error: orderError } = await supabase
       .from('orders')
       .insert({
         user_id: user.id,
         razorpay_order_id: razorpayOrderId,
         total_amount,
-        status: orderStatus,
+        status: 'order_placed',
         shipping_address,
+        payment_method: isCOD ? 'cod' : 'prepaid',
       })
       .select()
       .single();

@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Package, ChevronRight, Clock, CheckCircle, Truck, XCircle } from 'lucide-react';
+import { Package, ChevronRight, Clock, CheckCircle, Truck, PackageCheck, CreditCard, Banknote } from 'lucide-react';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -23,6 +23,7 @@ interface Order {
   id: string;
   total_amount: number;
   status: string;
+  payment_method: string;
   created_at: string;
   shipping_address: {
     firstName?: string;
@@ -36,11 +37,15 @@ interface Order {
 }
 
 const statusConfig: Record<string, { icon: React.ElementType; color: string; label: string }> = {
-  pending: { icon: Clock, color: 'bg-yellow-100 text-yellow-800 border-yellow-200', label: 'Pending' },
-  processing: { icon: Package, color: 'bg-blue-100 text-blue-800 border-blue-200', label: 'Processing' },
-  shipped: { icon: Truck, color: 'bg-purple-100 text-purple-800 border-purple-200', label: 'Shipped' },
+  order_placed: { icon: Clock, color: 'bg-yellow-100 text-yellow-800 border-yellow-200', label: 'Order Placed' },
+  shipped: { icon: Truck, color: 'bg-blue-100 text-blue-800 border-blue-200', label: 'Shipped' },
+  dispatched: { icon: PackageCheck, color: 'bg-purple-100 text-purple-800 border-purple-200', label: 'Dispatched' },
   delivered: { icon: CheckCircle, color: 'bg-green-100 text-green-800 border-green-200', label: 'Delivered' },
-  cancelled: { icon: XCircle, color: 'bg-red-100 text-red-800 border-red-200', label: 'Cancelled' },
+};
+
+const paymentMethodConfig: Record<string, { icon: React.ElementType; color: string; label: string }> = {
+  prepaid: { icon: CreditCard, color: 'bg-green-100 text-green-800 border-green-200', label: 'Prepaid' },
+  cod: { icon: Banknote, color: 'bg-orange-100 text-orange-800 border-orange-200', label: 'COD' },
 };
 
 const Orders = () => {
@@ -158,8 +163,10 @@ const Orders = () => {
           ) : (
             <div className="space-y-4">
               {orders.map((order) => {
-                const status = statusConfig[order.status] || statusConfig.pending;
+                const status = statusConfig[order.status] || statusConfig.order_placed;
                 const StatusIcon = status.icon;
+                const payment = paymentMethodConfig[order.payment_method] || paymentMethodConfig.cod;
+                const PaymentIcon = payment.icon;
                 const isExpanded = expandedOrder === order.id;
 
                 return (
@@ -183,6 +190,10 @@ const Orders = () => {
                           </div>
                         </div>
                         <div className="flex items-center gap-4">
+                          <Badge className={`${payment.color} border`}>
+                            <PaymentIcon className="h-3 w-3 mr-1" />
+                            {payment.label}
+                          </Badge>
                           <Badge className={`${status.color} border`}>
                             {status.label}
                           </Badge>
