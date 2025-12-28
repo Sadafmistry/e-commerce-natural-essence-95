@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
-import { ShoppingCart, Menu, X, User, Search, LayoutDashboard } from 'lucide-react';
+import { ShoppingCart, Menu, X, User, Search, LayoutDashboard, Package } from 'lucide-react';
 import { Link, useNavigate } from 'react-router-dom';
 
 import { useCart } from '@/contexts/CartContext';
@@ -66,6 +66,11 @@ const Header = () => {
             <Button variant="ghost" size="icon" onClick={handleSearchClick}>
               <Search className="h-4 w-4" />
             </Button>
+            {user && (
+              <Button variant="ghost" size="icon" onClick={() => navigate('/orders')} title="My Orders">
+                <Package className="h-4 w-4" />
+              </Button>
+            )}
             {isAdmin && (
               <Button variant="ghost" size="icon" onClick={() => navigate('/admin')} title="Admin Dashboard">
                 <LayoutDashboard className="h-4 w-4" />
@@ -134,6 +139,15 @@ const Header = () => {
               >
                 Contact
               </Link>
+              {user && (
+                <Link
+                  to="/orders"
+                  className="text-foreground hover:text-primary transition-colors"
+                  onClick={() => setIsMenuOpen(false)}
+                >
+                  My Orders
+                </Link>
+              )}
               {isAdmin && (
                 <Link
                   to="/admin"
