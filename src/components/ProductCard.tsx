@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Star, ShoppingCart } from 'lucide-react';
@@ -20,10 +21,16 @@ interface ProductCardProps {
 }
 
 const ProductCard = ({ product }: ProductCardProps) => {
-  const { addToCart, isLoading: cartLoading } = useCart();
+  const { addToCart } = useCart();
+  const [isAdding, setIsAdding] = useState(false);
 
   const handleAddToCart = async () => {
-    await addToCart(product.id);
+    setIsAdding(true);
+    try {
+      await addToCart(product.id);
+    } finally {
+      setIsAdding(false);
+    }
   };
 
   return (
@@ -88,10 +95,10 @@ const ProductCard = ({ product }: ProductCardProps) => {
               size="sm" 
               className="space-x-1"
               onClick={handleAddToCart}
-              disabled={cartLoading}
+              disabled={isAdding}
             >
               <ShoppingCart className="h-4 w-4" />
-              <span>{cartLoading ? 'Adding...' : 'Add'}</span>
+              <span>{isAdding ? 'Adding...' : 'Add'}</span>
             </Button>
           </div>
         </div>
