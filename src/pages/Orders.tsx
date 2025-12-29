@@ -10,6 +10,7 @@ import { Separator } from '@/components/ui/separator';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import { format } from 'date-fns';
+import OrderTimeline from '@/components/OrderTimeline';
 
 interface OrderItem {
   id: string;
@@ -17,6 +18,12 @@ interface OrderItem {
   quantity: number;
   price: number;
   product_name?: string;
+}
+
+interface StatusHistory {
+  id: string;
+  status: string;
+  changed_at: string;
 }
 
 interface Order {
@@ -34,6 +41,7 @@ interface Order {
     zipCode?: string;
   };
   items?: OrderItem[];
+  statusHistory?: StatusHistory[];
 }
 
 const statusConfig: Record<string, { icon: React.ElementType; color: string; label: string }> = {
@@ -85,6 +93,13 @@ const Orders = () => {
             .select('*')
             .eq('order_id', order.id);
 
+          // Fetch status history for timeline
+          const { data: statusHistory } = await supabase
+            .from('order_status_history')
+            .select('*')
+            .eq('order_id', order.id)
+            .order('changed_at', { ascending: true });
+
           // Fetch product names for each item
           const itemsWithNames = await Promise.all(
             (items || []).map(async (item) => {
@@ -105,6 +120,7 @@ const Orders = () => {
             ...order,
             shipping_address: order.shipping_address as Order['shipping_address'],
             items: itemsWithNames,
+            statusHistory: statusHistory || [],
           };
         })
       );
@@ -238,6 +254,12 @@ const Orders = () => {
                             </div>
                           </div>
 
+                          {/* Order Timeline */}
+                          <OrderTimeline 
+                            statusHistory={order.statusHistory || []} 
+                            currentStatus={order.status} 
+                          />
+
                           <Separator />
 
                           {/* Shipping Address */}
@@ -253,6 +275,12 @@ const Orders = () => {
                           <Separator />
 
                           {/* Order Total */}
+                          <div className="flex justify-between items-center">
+                            <span className="font-medium text-foreground">Total</span>
+                            <span className="text-xl font-bold text-primary">
+                              ₹{Number(order.total_amount).toFixed(2)}
+                            </span>
+                          </div>
                           <div className="flex justify-between items-center">
                             <span className="font-medium text-foreground">Total</span>
                             <span className="text-xl font-bold text-primary">
