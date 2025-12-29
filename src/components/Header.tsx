@@ -35,15 +35,15 @@ const Header = () => {
       <div className="container mx-auto px-4">
         <div className="flex items-center justify-between h-16">
           {/* Logo */}
-          <Link to="/" className="flex items-center space-x-2">
-            <div className="w-8 h-8 bg-gradient-sage rounded-full"></div>
-            <span className="text-2xl font-serif font-bold text-foreground">
+          <Link to="/" className="flex items-center space-x-2 flex-shrink-0">
+            <div className="w-8 h-8 bg-gradient-sage rounded-full flex-shrink-0"></div>
+            <span className="text-lg sm:text-2xl font-serif font-bold text-foreground truncate">
               Natural Essence
             </span>
           </Link>
 
           {/* Desktop Navigation */}
-          <nav className="hidden md:flex items-center space-x-8">
+          <nav className="hidden lg:flex items-center space-x-8">
             <Link to="/" className="text-foreground hover:text-primary transition-colors">
               Home
             </Link>
@@ -62,21 +62,21 @@ const Header = () => {
           </nav>
 
           {/* Actions */}
-          <div className="flex items-center space-x-4">
-            <Button variant="ghost" size="icon" onClick={handleSearchClick}>
+          <div className="flex items-center space-x-1 sm:space-x-2 md:space-x-4 flex-shrink-0">
+            <Button variant="ghost" size="icon" className="hidden sm:flex" onClick={handleSearchClick}>
               <Search className="h-4 w-4" />
             </Button>
             {user && (
-              <Button variant="ghost" size="icon" onClick={() => navigate('/orders')} title="My Orders">
+              <Button variant="ghost" size="icon" className="hidden md:flex" onClick={() => navigate('/orders')} title="My Orders">
                 <Package className="h-4 w-4" />
               </Button>
             )}
             {isAdmin && (
-              <Button variant="ghost" size="icon" onClick={() => navigate('/admin')} title="Admin Dashboard">
+              <Button variant="ghost" size="icon" className="hidden md:flex" onClick={() => navigate('/admin')} title="Admin Dashboard">
                 <LayoutDashboard className="h-4 w-4" />
               </Button>
             )}
-            <Button variant="ghost" size="icon" onClick={handleUserClick}>
+            <Button variant="ghost" size="icon" className="hidden sm:flex" onClick={handleUserClick}>
               <User className="h-4 w-4" />
             </Button>
             <Button variant="ghost" size="icon" className="relative" onClick={handleCartClick}>
@@ -92,7 +92,7 @@ const Header = () => {
             <Button
               variant="ghost"
               size="icon"
-              className="md:hidden"
+              className="lg:hidden"
               onClick={() => setIsMenuOpen(!isMenuOpen)}
             >
               {isMenuOpen ? <X className="h-4 w-4" /> : <Menu className="h-4 w-4" />}
@@ -102,7 +102,7 @@ const Header = () => {
 
         {/* Mobile Navigation */}
         {isMenuOpen && (
-          <div className="md:hidden border-t border-border bg-background">
+          <div className="lg:hidden border-t border-border bg-background">
             <nav className="flex flex-col space-y-4 p-4">
               <Link
                 to="/"
@@ -113,9 +113,10 @@ const Header = () => {
               </Link>
               <Link
                 to="/products"
-                className="text-foreground hover:text-primary transition-colors"
+                className="text-foreground hover:text-primary transition-colors flex items-center gap-2"
                 onClick={() => setIsMenuOpen(false)}
               >
+                <Search className="h-4 w-4" />
                 Products
               </Link>
               <Link
@@ -139,21 +140,31 @@ const Header = () => {
               >
                 Contact
               </Link>
+              <Link
+                to={user ? '/profile' : '/auth'}
+                className="text-foreground hover:text-primary transition-colors flex items-center gap-2"
+                onClick={() => setIsMenuOpen(false)}
+              >
+                <User className="h-4 w-4" />
+                {user ? 'My Account' : 'Sign In'}
+              </Link>
               {user && (
                 <Link
                   to="/orders"
-                  className="text-foreground hover:text-primary transition-colors"
+                  className="text-foreground hover:text-primary transition-colors flex items-center gap-2"
                   onClick={() => setIsMenuOpen(false)}
                 >
+                  <Package className="h-4 w-4" />
                   My Orders
                 </Link>
               )}
               {isAdmin && (
                 <Link
                   to="/admin"
-                  className="text-foreground hover:text-primary transition-colors"
+                  className="text-foreground hover:text-primary transition-colors flex items-center gap-2"
                   onClick={() => setIsMenuOpen(false)}
                 >
+                  <LayoutDashboard className="h-4 w-4" />
                   Admin Dashboard
                 </Link>
               )}
